@@ -1,0 +1,54 @@
+sudo: required
+language: python
+
+services:
+  - docker
+cache: pip
+
+jobs:
+  include:
+    # Nightly PKI COPR Build
+    - env:
+        - TASK="pki-nightly"
+        - IMAGE="registry.fedoraproject.org/fedora:28"
+        - GITHUB_REPO="https://github.com/dogtagpki/pki.git"
+        - PKI_VERSION=10.6
+        - COPR_REPO="@pki/${PKI_VERSION}-nightly"
+      before_install:
+        # Pull the corresponding Docker image and start the container
+        - docker pull ${IMAGE}
+        - >
+          docker run
+          --detach
+          --name=${TASK}
+          --privileged
+          --tmpfs /tmp
+          -e BUILDUSER_UID=$(id -u)
+          -e BUILDUSER_GID=$(id -g)
+          -e COPR_API="${COPR_API}"
+          -e COPR_REPO="${COPR_REPO}"
+          -e TRAVIS=${TRAVIS}
+          -e TRAVIS_JOB_NUMBER=${TRAVIS_JOB_NUMBER}
+          -ti
+          ${IMAGE}
+      
+      install:
+        # Install git inside container
+        - docker exec -it ${TASK} dnf install -y git dnf-plugins-core rpm-build copr-cli
+        - docker exec -it ${TASK} dnf copr enable -y @pki/${PKI_VERSION}
+        - docker exec -it ${TASK} dnf -y update
+
+      before_script:
+        # Clone upstream PKI repo from github
+        - docker exec -it ${TASK} bash -c 'mkdir -p ~/.config/ && echo -e $COPR_API > ~/.config/copr'
+        - docker exec -it ${TASK} git clone ${GITHUB_REPO} /pki/
+      script:
+        # Generate SRPM
+        - >
+          docker exec -it ${TASK} 
+          /pki/build.sh 
+          --with-timestamp 
+          --with-commit-id 
+          --work-dir=/packages srpm
+        - docker exec -it ${TASK} ls /packages/SRPMS/
+        - docker exec -it ${TASK} bash -c 'copr-cli build ${COPR_REPO} /packages/SRPMS/*.src.rpm'
