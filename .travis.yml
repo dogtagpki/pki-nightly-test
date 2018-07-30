@@ -5,6 +5,12 @@ services:
   - docker
 cache: pip
 
+notifications:
+  email:
+    - dmoluguw@redhat.com
+  on_success: always
+  on_failure: always
+
 jobs:
   include:
     # Nightly PKI COPR Build
@@ -22,13 +28,13 @@ jobs:
           --detach
           --name=${TASK}
           --privileged
-          --tmpfs /tmp
           -e BUILDUSER_UID=$(id -u)
           -e BUILDUSER_GID=$(id -g)
           -e COPR_API="${COPR_API}"
           -e COPR_REPO="${COPR_REPO}"
           -e TRAVIS=${TRAVIS}
           -e TRAVIS_JOB_NUMBER=${TRAVIS_JOB_NUMBER}
+          -v $(pwd):/tmp
           -ti
           ${IMAGE}
       
@@ -52,3 +58,8 @@ jobs:
           --work-dir=/packages srpm
         - docker exec -it ${TASK} ls /packages/SRPMS/
         - docker exec -it ${TASK} bash -c 'copr-cli build ${COPR_REPO} /packages/SRPMS/*.src.rpm'
+
+      after_script:
+        # Clean the COPR repo for builds > 7 days
+        - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
+
