@@ -50,14 +50,8 @@ jobs:
         - docker exec -it ${TASK} git clone ${GITHUB_REPO} /pki/
       script:
         # Generate SRPM
-        - >
-          docker exec -it ${TASK} 
-          /pki/build.sh 
-          --with-timestamp 
-          --with-commit-id 
-          --work-dir=/packages srpm
+        - travis_wait 15 ./buildCOPR.sh
         - docker exec -it ${TASK} ls /packages/SRPMS/
-        - docker exec -it ${TASK} bash -c 'copr-cli build ${COPR_REPO} /packages/SRPMS/*.src.rpm'
 
       after_script:
         # Clean the COPR repo for builds > 7 days
@@ -73,6 +67,7 @@ jobs:
         - COPR_REPO="@pki/${PKI_VERSION}-nightly"
         - HOST_RPMS=${TRAVIS_BUILD_DIR}/RPMS
         - BUILDER_RPMS=/tmp/RPMS
+        - LOGS=${TRAVIS_BUILD_DIR}/logs.txt
 
       before_install:
         - docker pull ${LOCAL_IMAGE}
