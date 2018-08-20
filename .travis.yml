@@ -7,7 +7,7 @@ cache: pip
 
 notifications:
   email:
-    - pki-team@redhat.com
+    - pki-devel@redhat.com
   on_success: change
   on_failure: always
 
@@ -92,7 +92,7 @@ jobs:
       before_script:
         # Download the latest RPMs inside container from COPR
         - docker exec -it ${TASK} mkdir -p ${BUILDER_RPMS}
-        - docker exec -it ${TASK} dnf install -y --downloadonly --downloaddir ${BUILDER_RPMS} pki      
+        - docker exec -it ${TASK} dnf install -y --downloadonly --downloaddir ${BUILDER_RPMS} dogtag-pki
         
         # Copy the RPMs to the host machine (to Travis machine)
         - mkdir -p ${HOST_RPMS}
