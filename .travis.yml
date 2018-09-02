@@ -37,7 +37,7 @@ jobs:
         - >
           travis_wait 15
           ./buildCOPR.sh ${WORKING_DIR}/build.sh
-          --with-timestamp 
+          --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
 
@@ -52,6 +52,39 @@ jobs:
 
 
     # Stage 2: TomcatJSS
+    - stage: Build stage 2
+      env:
+        - TASK="tomcatjss"
+      before_install:
+        # Export variables to be available for all scripts
+        - set -a && source global_variables
+
+        # Initialize the docker environment
+        - ./buildInit.sh
+
+      install:
+        # Install required packages inside container
+        - ./buildInstall.sh
+
+      before_script:
+        # Clone upstream PKI repo from github
+        - ./setupCOPR.sh
+
+      script:
+        # Generate SRPM
+        - >
+          travis_wait 15
+          ./buildCOPR.sh ${WORKING_DIR}/build.sh
+          --with-timestamp 
+          --with-commit-id
+          --work-dir=${DEST_PKG_DIR} srpm
+
+        # Test whether the SRPM is available at the correct location
+        - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
+
+      after_script:
+        # Clean the COPR repo for builds > 7 days
+        - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
 
 
     # Stage 2: ldapJDK
@@ -87,8 +120,8 @@ jobs:
         # Test whether the SRPM is available at the correct location
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
 
+      # Clean the COPR repo for builds > 7 days (run only once to clean all)
       after_script:
-        # Clean the COPR repo for builds > 7 days
         - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
 
     # Stage 4: IPA Test
