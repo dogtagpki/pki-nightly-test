@@ -9,7 +9,7 @@ notifications:
   email:
     - pki-devel@redhat.com
   on_success: change
-  on_failure: always
+  on_failure: change
 
 jobs:
   include:
@@ -35,8 +35,8 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 15
-          ./buildCOPR.sh ${WORKING_DIR}/build.sh
+          travis_wait 20
+          ./buildCOPR.sh ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
@@ -45,11 +45,43 @@ jobs:
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
 
       after_script:
-        # Clean the COPR repo for builds > 7 days
-        - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
+        - docker kill ${TASK}
+        - docker rm ${TASK}
 
     # Stage 1: Build Nuxwdog
+    - env:
+        - TASK="nuxwdog"
+      before_install:
+        # Export variables to be available for all scripts
+        - set -a && source global_variables
 
+        # Initialize the docker environment
+        - ./buildInit.sh
+
+      install:
+        # Install required packages inside container
+        - ./buildInstall.sh
+
+      before_script:
+        # Clone upstream PKI repo from github
+        - ./setupCOPR.sh
+
+      script:
+        # Generate SRPM
+        - >
+          travis_wait 20
+          ./buildCOPR.sh ${TASK}/build.sh
+          --with-timestamp
+          --with-commit-id
+          --work-dir=${DEST_PKG_DIR} srpm
+
+        # Test whether the SRPM is available at the correct location
+        - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
+
+      after_script:
+        - docker kill ${TASK}
+        - docker rm ${TASK}
+        
 
     # Stage 2: TomcatJSS
     - stage: Build stage 2
@@ -73,8 +105,8 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 15
-          ./buildCOPR.sh ${WORKING_DIR}/build.sh
+          travis_wait 20
+          ./buildCOPR.sh ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
@@ -83,8 +115,8 @@ jobs:
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
 
       after_script:
-        # Clean the COPR repo for builds > 7 days
-        - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
+        - docker kill ${TASK}
+        - docker rm ${TASK}
 
     # Stage 2: ldapJDK
     - env:
@@ -107,8 +139,8 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 15
-          ./buildCOPR.sh ${WORKING_DIR}/build.sh
+          travis_wait 20
+          ./buildCOPR.sh ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
@@ -117,8 +149,8 @@ jobs:
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
 
       after_script:
-        # Clean the COPR repo for builds > 7 days
-        - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
+        - docker kill ${TASK}
+        - docker rm ${TASK}
 
     # Stage 3: pki
     - stage: Build stage 3
@@ -142,8 +174,8 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 15
-          ./buildCOPR.sh ${WORKING_DIR}/build.sh
+          travis_wait 20
+          ./buildCOPR.sh ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
@@ -154,63 +186,61 @@ jobs:
       # Clean the COPR repo for builds > 7 days (run only once to clean all)
       after_script:
         - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
+        - docker kill ${TASK}
+        - docker rm ${TASK}
 
     # Stage 4: IPA Test
     - stage: IPA Nightly Test
       env:
-        - TASK="ipatest-f27"
-        - LOCAL_IMAGE="registry.fedoraproject.org/fedora:27"
-        - IMAGE=f27_106_46
+        - TASK="IPA test on F27"
+        - BASE_IMAGE_VERSION=27
         - GITHUB_REPO="https://github.com/dogtagpki/pki.git"
-        - PKI_VERSION=10.6
-        - COPR_REPO="@pki/${PKI_VERSION}-nightly"
-        - HOST_RPMS=${TRAVIS_BUILD_DIR}/RPMS
-        - BUILDER_RPMS=/tmp/RPMS
-        - LOGS=${TRAVIS_BUILD_DIR}/logs.txt
 
-      before_install:
-        - docker pull ${LOCAL_IMAGE}
-        - >
-          docker run
-          --detach
-          --name=${TASK}
-          --privileged
-          -e TRAVIS=${TRAVIS}
-          -e TRAVIS_JOB_NUMBER=${TRAVIS_JOB_NUMBER}
-          -ti
-          ${LOCAL_IMAGE}
+      before_install:  
+        - git clone ${GITHUB_REPO}
+        - set -a && source pki/travis/global_variables
+        - touch ${LOGS}
 
       install:
-        # Install git inside container
-        - docker exec -it ${TASK} dnf install -y git dnf-plugins-core
-        # To install dependent packages like tomcatjss
-        - docker exec -it ${TASK} dnf copr enable -y @pki/${PKI_VERSION}
-        - docker exec -it ${TASK} dnf copr enable -y ${COPR_REPO}
-        - docker exec -it ${TASK} dnf -y update
-
-      before_script:
-        # Download the latest RPMs inside container from COPR
-        - docker exec -it ${TASK} mkdir -p ${BUILDER_RPMS}
-        - docker exec -it ${TASK} dnf install -y --downloadonly --downloaddir ${BUILDER_RPMS} dogtag-pki
-        
-        # Copy the RPMs to the host machine (to Travis machine)
-        - mkdir -p ${HOST_RPMS}
-        - docker cp ${TASK}:${BUILDER_RPMS}/. ${HOST_RPMS}
-
-        # Clone upstream PKI repo from github
-        - git clone ${GITHUB_REPO} ${TRAVIS_BUILD_DIR}/pki
-
-        # Install ipa-docker-test-runner tool
-        - pyenv global system 3.6
-        - pip3 install --upgrade pip # This will be removed in future
-        # This will be removed in future once ipa-init.sh is cleaned -- removing `mkdir` & `docker cp` commands
-        - pip3 install git+https://github.com/freeipa/ipa-docker-test-runner@release-0-3-1
-        
+        - pki/travis/builder-init.sh
+        - docker exec -it ${CONTAINER} dnf install -y dnf-plugins-core
+        # Enable nightly COPR repo
+        - docker exec -it ${CONTAINER} dnf copr enable -y @pki/${PKI_VERSION}-nightly
+        # Install latest IPA from official fedora/updates repo
+        - docker exec -it ${CONTAINER} ${BUILDDIR}/pki/pki/travis/ipa-init.sh
 
       script:
         # Run the IPA tests
-        - cd ${TRAVIS_BUILD_DIR}/pki && travis/ipa-test.sh
+        - docker exec -it ${CONTAINER} ${BUILDDIR}/pki/pki/travis/ipa-test.sh
 
       after_script:
-        - docker kill ${TASK}
-        - docker rm ${TASK}
+        - cat ${LOGS}
+        - docker kill ${CONTAINER}
+        - docker rm ${CONTAINER}
+
+    - env:
+        - TASK="IPA test on F28"
+        - BASE_IMAGE_VERSION=28
+        - GITHUB_REPO="https://github.com/dogtagpki/pki.git"
+
+      before_install:  
+        - git clone ${GITHUB_REPO}
+        - set -a && source pki/travis/global_variables
+        - touch ${LOGS}
+
+      install:
+        - pki/travis/builder-init.sh
+        - docker exec -it ${CONTAINER} dnf install -y dnf-plugins-core
+        # Enable nightly COPR repo
+        - docker exec -it ${CONTAINER} dnf copr enable -y @pki/${PKI_VERSION}-nightly
+        # Install latest IPA from official fedora/updates repo
+        - docker exec -it ${CONTAINER} ${BUILDDIR}/pki/pki/travis/ipa-init.sh
+
+      script:
+        # Run the IPA tests
+        - docker exec -it ${CONTAINER} ${BUILDDIR}/pki/pki/travis/ipa-test.sh
+
+      after_script:
+        - cat ${LOGS}
+        - docker kill ${CONTAINER}
+        - docker rm ${CONTAINER}

@@ -2,5 +2,4 @@ IMAGE="registry.fedoraproject.org/fedora:28"
 PKI_VERSION=10.6
 COPR_REPO="@pki/${PKI_VERSION}-nightly"
 GITHUB_REPO="https://github.com/dogtagpki/${TASK}.git"
-WORKING_DIR="/tmp/${TASK}"
 DEST_PKG_DIR="/tmp/packages"
