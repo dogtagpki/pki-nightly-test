@@ -35,11 +35,12 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 20
-          ./buildCOPR.sh ${TASK}/build.sh
+          docker exec -i ${TASK} ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
 
         # Test whether the SRPM is available at the correct location
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
@@ -69,11 +70,12 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 20
-          ./buildCOPR.sh ${TASK}/build.sh
+          docker exec -i ${TASK} ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
 
         # Test whether the SRPM is available at the correct location
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
@@ -105,11 +107,12 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 20
-          ./buildCOPR.sh ${TASK}/build.sh
+          docker exec -i ${TASK} ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
 
         # Test whether the SRPM is available at the correct location
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
@@ -139,11 +142,12 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 20
-          ./buildCOPR.sh ${TASK}/build.sh
+          docker exec -i ${TASK} ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
 
         # Test whether the SRPM is available at the correct location
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
@@ -174,11 +178,12 @@ jobs:
       script:
         # Generate SRPM
         - >
-          travis_wait 20
-          ./buildCOPR.sh ${TASK}/build.sh
+          docker exec -i ${TASK} ${TASK}/build.sh
           --with-timestamp
           --with-commit-id
           --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
 
         # Test whether the SRPM is available at the correct location
         - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
