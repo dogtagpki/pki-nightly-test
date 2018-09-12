@@ -9,54 +9,192 @@ notifications:
   email:
     - pki-devel@redhat.com
   on_success: change
-  on_failure: always
+  on_failure: change
 
 jobs:
   include:
-    - stage: PKI Nightly COPR Build
+    # Stage 1: Build jss
+    - stage: Build stage 1
       env:
-        - TASK="pki-nightly"
-        - IMAGE="registry.fedoraproject.org/fedora:28"
-        - GITHUB_REPO="https://github.com/dogtagpki/pki.git"
-        - PKI_VERSION=10.6
-        - COPR_REPO="@pki/${PKI_VERSION}-nightly"
+        - TASK="jss"
       before_install:
-        # Pull the corresponding Docker image and start the container
-        - docker pull ${IMAGE}
-        - >
-          docker run
-          --detach
-          --name=${TASK}
-          --privileged
-          -e BUILDUSER_UID=$(id -u)
-          -e BUILDUSER_GID=$(id -g)
-          -e COPR_API="${COPR_API}"
-          -e COPR_REPO="${COPR_REPO}"
-          -e TRAVIS=${TRAVIS}
-          -e TRAVIS_JOB_NUMBER=${TRAVIS_JOB_NUMBER}
-          -v $(pwd):/tmp
-          -ti
-          ${IMAGE}
-      
+        # Export variables to be available for all scripts
+        - set -a && source global_variables
+
+        # Initialize the docker environment
+        - ./buildInit.sh
+
       install:
         # Install required packages inside container
-        - docker exec -it ${TASK} dnf install -y git dnf-plugins-core rpm-build copr-cli
-        - docker exec -it ${TASK} dnf copr enable -y @pki/${PKI_VERSION}
-        - docker exec -it ${TASK} dnf -y update
+        - ./buildInstall.sh
 
       before_script:
         # Clone upstream PKI repo from github
-        - docker exec -it ${TASK} bash -c 'mkdir -p ~/.config/ && echo -e $COPR_API > ~/.config/copr'
-        - docker exec -it ${TASK} git clone ${GITHUB_REPO} /pki/
+        - ./setupCOPR.sh
+
       script:
         # Generate SRPM
+        - >
+          docker exec -i ${TASK} ${TASK}/build.sh
+          --with-timestamp
+          --with-commit-id
+          --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
         - travis_wait 20 ./buildCOPR.sh
-        - docker exec -it ${TASK} ls /packages/SRPMS/
+
+        # Test whether the SRPM is available at the correct location
+        - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
 
       after_script:
-        # Clean the COPR repo for builds > 7 days
-        - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
+        - docker kill ${TASK}
+        - docker rm ${TASK}
 
+    # Stage 1: Build Nuxwdog
+    - env:
+        - TASK="nuxwdog"
+      before_install:
+        # Export variables to be available for all scripts
+        - set -a && source global_variables
+
+        # Initialize the docker environment
+        - ./buildInit.sh
+
+      install:
+        # Install required packages inside container
+        - ./buildInstall.sh
+
+      before_script:
+        # Clone upstream PKI repo from github
+        - ./setupCOPR.sh
+
+      script:
+        # Generate SRPM
+        - >
+          docker exec -i ${TASK} ${TASK}/build.sh
+          --with-timestamp
+          --with-commit-id
+          --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
+
+        # Test whether the SRPM is available at the correct location
+        - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
+
+      after_script:
+        - docker kill ${TASK}
+        - docker rm ${TASK}
+        
+
+    # Stage 2: TomcatJSS
+    - stage: Build stage 2
+      env:
+        - TASK="tomcatjss"
+      before_install:
+        # Export variables to be available for all scripts
+        - set -a && source global_variables
+
+        # Initialize the docker environment
+        - ./buildInit.sh
+
+      install:
+        # Install required packages inside container
+        - ./buildInstall.sh
+
+      before_script:
+        # Clone upstream PKI repo from github
+        - ./setupCOPR.sh
+
+      script:
+        # Generate SRPM
+        - >
+          docker exec -i ${TASK} ${TASK}/build.sh
+          --with-timestamp
+          --with-commit-id
+          --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
+
+        # Test whether the SRPM is available at the correct location
+        - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
+
+      after_script:
+        - docker kill ${TASK}
+        - docker rm ${TASK}
+
+    # Stage 2: ldapJDK
+    - env:
+        - TASK="ldap-sdk"
+      before_install:
+        # Export variables to be available for all scripts
+        - set -a && source global_variables
+
+        # Initialize the docker environment
+        - ./buildInit.sh
+
+      install:
+        # Install required packages inside container
+        - ./buildInstall.sh
+
+      before_script:
+        # Clone upstream PKI repo from github
+        - ./setupCOPR.sh
+
+      script:
+        # Generate SRPM
+        - >
+          docker exec -i ${TASK} ${TASK}/build.sh
+          --with-timestamp
+          --with-commit-id
+          --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
+
+        # Test whether the SRPM is available at the correct location
+        - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
+
+      after_script:
+        - docker kill ${TASK}
+        - docker rm ${TASK}
+
+    # Stage 3: pki
+    - stage: Build stage 3
+      env:
+        - TASK="pki"
+      before_install:
+        # Export variables to be available for all scripts
+        - set -a && source global_variables
+
+        # Initialize the docker environment
+        - ./buildInit.sh
+      
+      install:
+        # Install required packages inside container
+        - ./buildInstall.sh
+
+      before_script:
+        # Clone upstream PKI repo from github
+        - ./setupCOPR.sh
+
+      script:
+        # Generate SRPM
+        - >
+          docker exec -i ${TASK} ${TASK}/build.sh
+          --with-timestamp
+          --with-commit-id
+          --work-dir=${DEST_PKG_DIR} srpm
+        # Trigger a COPR build
+        - travis_wait 20 ./buildCOPR.sh
+
+        # Test whether the SRPM is available at the correct location
+        - docker exec -it ${TASK} ls ${DEST_PKG_DIR}/SRPMS/
+
+      # Clean the COPR repo for builds > 7 days (run only once to clean all)
+      after_script:
+        - docker exec -it ${TASK} /tmp/pki-copr-cleaner.py
+        - docker kill ${TASK}
+        - docker rm ${TASK}
+
+    # Stage 4: IPA Test
     - stage: IPA Nightly Test
       env:
         - TASK="IPA test on F27"
