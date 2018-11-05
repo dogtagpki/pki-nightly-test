@@ -204,13 +204,14 @@ jobs:
       before_install:  
         - git clone ${GITHUB_REPO}
         - set -a && source pki/travis/global_variables
+        - set -a && source global_variables
         - touch ${LOGS}
 
       install:
         - pki/travis/builder-init.sh
         - docker exec -it ${CONTAINER} dnf install -y dnf-plugins-core
         # Enable nightly COPR repo
-        - docker exec -it ${CONTAINER} dnf copr enable -y @pki/${PKI_VERSION}-nightly
+        - docker exec -it ${CONTAINER} dnf copr enable -y ${TEST_COPR_REPO}
         # Install latest IPA from official fedora/updates repo
         - docker exec -it ${CONTAINER} ${BUILDDIR}/pki/pki/travis/ipa-init.sh
 
@@ -231,13 +232,14 @@ jobs:
       before_install:  
         - git clone ${GITHUB_REPO}
         - set -a && source pki/travis/global_variables
+        - set -a && source global_variables
         - touch ${LOGS}
 
       install:
         - pki/travis/builder-init.sh
         - docker exec -it ${CONTAINER} dnf install -y dnf-plugins-core
         # Enable nightly COPR repo
-        - docker exec -it ${CONTAINER} dnf copr enable -y @pki/${PKI_VERSION}-nightly
+        - docker exec -it ${CONTAINER} dnf copr enable -y ${TEST_COPR_REPO}
         # Install latest IPA from official fedora/updates repo
         - docker exec -it ${CONTAINER} ${BUILDDIR}/pki/pki/travis/ipa-init.sh
 
