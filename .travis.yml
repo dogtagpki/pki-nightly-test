@@ -197,8 +197,8 @@ jobs:
     # Stage 4: IPA Test
     - stage: IPA Nightly Test
       env:
-        - TASK="IPA test on F27"
-        - BASE_IMAGE_VERSION=27
+        - TASK="IPA"
+        - BASE_IMAGE_VERSION=28
         - GITHUB_REPO="https://github.com/dogtagpki/pki.git"
 
       before_install:  
@@ -225,8 +225,8 @@ jobs:
         - docker rm ${CONTAINER}
 
     - env:
-        - TASK="IPA test on F28"
-        - BASE_IMAGE_VERSION=28
+        - TASK="IPA"
+        - BASE_IMAGE_VERSION=29
         - GITHUB_REPO="https://github.com/dogtagpki/pki.git"
 
       before_install:  
