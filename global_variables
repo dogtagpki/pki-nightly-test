@@ -1,5 +1,3 @@
-IMAGE="registry.fedoraproject.org/fedora:29"
-COPR_REPO="@pki/10.6"
-TEST_COPR_REPO="${COPR_REPO}-nightly"
-GITHUB_REPO="https://github.com/dogtagpki/${TASK}.git"
 DEST_PKG_DIR="/tmp/packages"
+GITHUB_REPO="https://github.com/dogtagpki/pki.git"
+
