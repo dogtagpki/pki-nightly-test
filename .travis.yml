@@ -14,8 +14,8 @@ notifications:
 env:
   - BASE_IMAGE_VERSION=28 GITHUB_BRANCH=DOGTAG_10_6_BRANCH
   - BASE_IMAGE_VERSION=29 GITHUB_BRANCH=DOGTAG_10_6_BRANCH
-  - BASE_IMAGE_VERSION=28
-  - BASE_IMAGE_VERSION=29
+  - IMAGE=fedora:29
+  - IMAGE=fedora:30
 
 before_install:
   # You need to set local `gloabl_variables` before you can clone
