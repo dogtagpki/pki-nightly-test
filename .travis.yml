@@ -27,6 +27,7 @@ before_install:
 
 install:
   - pki/travis/builder-init.sh
+  - docker exec -it ${CONTAINER} rm -rf /var/cache/dnf/metadata_lock.pid
   - docker exec -it ${CONTAINER} dnf install -y dnf-plugins-core
   # Enable automated COPR repo
   - docker exec -it ${CONTAINER} dnf copr enable -y ${COPR_REPO}
