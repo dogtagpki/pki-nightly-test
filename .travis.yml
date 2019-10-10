@@ -12,12 +12,12 @@ notifications:
   on_failure: change
 
 env:
-  - BASE_IMAGE_VERSION=28 GITHUB_BRANCH=DOGTAG_10_6_BRANCH
   - BASE_IMAGE_VERSION=29 GITHUB_BRANCH=DOGTAG_10_6_BRANCH
   - IMAGE=registry.fedoraproject.org/fedora:29 GITHUB_BRANCH=v10.7
   - IMAGE=registry.fedoraproject.org/fedora:30 GITHUB_BRANCH=v10.7
   - IMAGE=registry.fedoraproject.org/fedora:29
   - IMAGE=registry.fedoraproject.org/fedora:30
+  - IMAGE=registry.fedoraproject.org/fedora:31
 
 before_install:
   # You need to set local `gloabl_variables` before you can clone
