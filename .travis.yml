@@ -17,7 +17,6 @@ env:
   - IMAGE=registry.fedoraproject.org/fedora:30 GITHUB_BRANCH=v10.7
   - IMAGE=registry.fedoraproject.org/fedora:29
   - IMAGE=registry.fedoraproject.org/fedora:30
-  - IMAGE=registry.fedoraproject.org/fedora:31
 
 before_install:
   # You need to set local `gloabl_variables` before you can clone
@@ -39,6 +38,23 @@ install:
 script:
   # Run the IPA tests
   - docker exec -it ${CONTAINER} ${BUILDDIR}/pki/pki/travis/ipa-test.sh
+
+matrix:
+  fast_finish: true
+  include:
+    - stage: rawhide/beta
+      env: IMAGE=registry.fedoraproject.org/fedora:31
+    - env: IMAGE=registry.fedoraproject.org/fedora:rawhide
+    - env: DUMMY_JOB=FOR_FAST_FINISH
+      before_install: true
+      install: true
+      script: true
+      after_script: true
+
+  allow_failures:
+    - stage: rawhide/beta
+      env: IMAGE=registry.fedoraproject.org/fedora:31
+    - env: IMAGE=registry.fedoraproject.org/fedora:rawhide
 
 after_script:
   - cat ${LOGS}
