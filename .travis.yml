@@ -15,8 +15,8 @@ env:
   - BASE_IMAGE_VERSION=29 GITHUB_BRANCH=DOGTAG_10_6_BRANCH
   - IMAGE=registry.fedoraproject.org/fedora:29 GITHUB_BRANCH=v10.7
   - IMAGE=registry.fedoraproject.org/fedora:30 GITHUB_BRANCH=v10.7
-  - IMAGE=registry.fedoraproject.org/fedora:29
   - IMAGE=registry.fedoraproject.org/fedora:30
+  - IMAGE=registry.fedoraproject.org/fedora:31
 
 before_install:
   # You need to set local `gloabl_variables` before you can clone
@@ -42,9 +42,8 @@ script:
 matrix:
   fast_finish: true
   include:
-    - stage: rawhide/beta
-      env: IMAGE=registry.fedoraproject.org/fedora:31
-    - env: IMAGE=registry.fedoraproject.org/fedora:rawhide
+    - stage: rawhide
+      env: IMAGE=registry.fedoraproject.org/fedora:rawhide
     - env: DUMMY_JOB=FOR_FAST_FINISH
       before_install: true
       install: true
@@ -52,8 +51,7 @@ matrix:
       after_script: true
 
   allow_failures:
-    - stage: rawhide/beta
-      env: IMAGE=registry.fedoraproject.org/fedora:31
+    - stage: rawhide
     - env: IMAGE=registry.fedoraproject.org/fedora:rawhide
 
 after_script:
